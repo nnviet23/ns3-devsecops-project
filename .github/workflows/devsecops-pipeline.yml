@@ -1,0 +1,38 @@
+name: DevSecOps Pipeline
+
+on:
+  push:
+    branches: [ "main" ] # Run when push code to the root
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  security-scan:
+    name: Security Vulnerability Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # Step 1: Scanning for vulnerabilities in code (SAST)
+      - name: Run Snyk to check for code vulnerabilities
+        uses: snyk/actions/cpp@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=medium
+
+      # Step 2: Check the included libraries (SCA).
+      - name: Run Snyk to check Python dependencies
+        uses: snyk/actions/python@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+  build-simulation:
+    needs: security-scan # Only run the build if the security scan is passed
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build Check
+        run: |
+          echo "Security scan passed!"
+          echo "Starting build process for NS-3 simulation..."
