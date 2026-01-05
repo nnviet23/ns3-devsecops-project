@@ -2,7 +2,7 @@ name: DevSecOps Pipeline
 
 on:
   push:
-    branches: [ "main" ] # Run when push code to the root
+    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
@@ -14,25 +14,28 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # Step 1: Scanning for vulnerabilities in code (SAST)
-      - name: Run Snyk to check for code vulnerabilities
-        uses: snyk/actions/cpp@master
+      # Bước 1: Cài đặt Snyk CLI vào máy ảo chạy Pipeline
+      - name: Install Snyk CLI
+        uses: snyk/actions/setup@master
+
+      # Bước 2: Quét mã nguồn tĩnh (SAST) cho C++ (NS-3 code)
+      # Lệnh 'snyk code test' sẽ tìm lỗi bảo mật trong file .cc của bạn
+      - name: Snyk Code Test (SAST for C++)
+        run: snyk code test --severity-threshold=medium
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --severity-threshold=medium
 
-      # Step 2: Check the included libraries (SCA).
+      # Bước 3: Quét các thư viện Python (SCA) cho file .py
       - name: Run Snyk to check Python dependencies
         uses: snyk/actions/python@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
   build-simulation:
-    needs: security-scan # Only run the build if the security scan is passed
+    needs: security-scan
     runs-on: ubuntu-latest
     steps:
-      - name: Build Check
+      - name: Verification
         run: |
-          echo "Security scan passed!"
-          echo "Starting build process for NS-3 simulation..."
+          echo "Security scan completed successfully!"
+          echo "Deployment ready for NS-3 simulation."
